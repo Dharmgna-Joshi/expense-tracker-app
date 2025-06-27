@@ -8,6 +8,8 @@ import Login from "./components/Auth/Login";
 import SignUp from "./components/Auth/SignUp";
 import ProfilePage from "./components/ProfilePage";
 import { signOut, onAuthStateChanged } from "firebase/auth";
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+
 import { auth } from "./firebase";
 
 function App() {
