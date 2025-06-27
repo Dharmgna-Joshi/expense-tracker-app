@@ -9,7 +9,7 @@ import {
   query,
   orderBy,
   updateDoc,
-  where
+  where,
 } from "firebase/firestore";
 import { useCategories } from "../context/CategoryContext";
 import CreatableSelect from "react-select/creatable";
@@ -18,14 +18,22 @@ const ExpensePage = () => {
   const [expenses, setExpenses] = useState([]);
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState(null);
+  const [date, setDate] = useState("");
+
   const [editingId, setEditingId] = useState(null);
   const [editAmount, setEditAmount] = useState("");
   const [editCategory, setEditCategory] = useState(null);
+  const [editDate, setEditDate] = useState("");
 
   const user = auth.currentUser;
   const allCategories = useCategories();
-  const categories = allCategories.filter((cat) => cat.type === "expense");
-  const categoryOptions = categories.map((c) => ({ label: c.name, value: c.name }));
+  const categories = allCategories.filter(
+    (cat) => cat.type?.toLowerCase().trim() === "expense"
+  );
+  const categoryOptions = categories.map((c) => ({
+    label: c.name,
+    value: c.name,
+  }));
 
   useEffect(() => {
     if (!user) return;
@@ -47,13 +55,14 @@ const ExpensePage = () => {
     if (!amount || !category || !user) return;
 
     const categoryName = category.label;
-
-    const existing = categories.find((c) => c.name.toLowerCase() === categoryName.toLowerCase());
+    const existing = categories.find(
+      (c) => c.name.toLowerCase() === categoryName.toLowerCase()
+    );
 
     if (!existing) {
       await addDoc(collection(db, "users", user.uid, "categories"), {
         name: categoryName,
-        type: "expense"
+        type: "expense",
       });
     }
 
@@ -61,33 +70,41 @@ const ExpensePage = () => {
       amount: parseFloat(amount),
       category: categoryName,
       type: "expense",
-      date: new Date().toISOString()
+      date: date
+      ? new Date(date + "T12:00:00").toISOString() // set fixed noon time
+      : new Date().toISOString(),
     });
 
     setAmount("");
     setCategory(null);
+    setDate("");
   };
 
   const startEdit = (t) => {
     setEditingId(t.id);
     setEditAmount(t.amount);
     setEditCategory({ label: t.category, value: t.category });
+
+    const rawDate = t.date;
+    const formatted = rawDate
+      ? new Date(rawDate).toISOString().split("T")[0]
+      : "";
+    setEditDate(formatted);
   };
 
   const handleUpdate = async () => {
-    if (!editAmount || !editCategory || !user) return;
+    if (!editAmount || !editCategory || !editDate || !user) return;
 
-    await updateDoc(
-      doc(db, "users", user.uid, "transactions", editingId),
-      {
-        amount: parseFloat(editAmount),
-        category: editCategory.label
-      }
-    );
+    await updateDoc(doc(db, "users", user.uid, "transactions", editingId), {
+      amount: parseFloat(editAmount),
+      category: editCategory.label,
+      date: new Date(editDate).toISOString(),
+    });
 
     setEditingId(null);
     setEditAmount("");
     setEditCategory(null);
+    setEditDate("");
   };
 
   const handleDelete = async (id) => {
@@ -100,7 +117,7 @@ const ExpensePage = () => {
       <h2 className="mb-4">Manage Expenses</h2>
       <div className="card p-4 mb-4">
         <div className="row g-3">
-          <div className="col-md-4">
+          <div className="col-md-3">
             <input
               type="number"
               className="form-control"
@@ -109,7 +126,7 @@ const ExpensePage = () => {
               onChange={(e) => setAmount(e.target.value)}
             />
           </div>
-          <div className="col-md-4">
+          <div className="col-md-3">
             <CreatableSelect
               isClearable
               onChange={setCategory}
@@ -118,7 +135,15 @@ const ExpensePage = () => {
               placeholder="Select or create category"
             />
           </div>
-          <div className="col-md-4">
+          <div className="col-md-3">
+            <input
+              type="date"
+              className="form-control"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </div>
+          <div className="col-md-3">
             <button className="btn btn-danger w-100" onClick={handleAdd}>
               Add Expense
             </button>
@@ -157,7 +182,14 @@ const ExpensePage = () => {
                       value={editCategory}
                     />
                   </td>
-                  <td>{new Date(t.date).toLocaleDateString()}</td>
+                  <td>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={editDate}
+                      onChange={(e) => setEditDate(e.target.value)}
+                    />
+                  </td>
                   <td>
                     <button
                       className="btn btn-success btn-sm me-2"
@@ -177,7 +209,7 @@ const ExpensePage = () => {
                 <>
                   <td>${t.amount.toFixed(2)}</td>
                   <td>{t.category}</td>
-                  <td>{new Date(t.date).toLocaleDateString()}</td>
+                  <td>{new Date(t.date).toLocaleString()}</td>
                   <td>
                     <button
                       className="btn btn-warning btn-sm me-2"

@@ -19,9 +19,13 @@ const IncomePage = () => {
   const [incomes, setIncomes] = useState([]);
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState(null);
+  const [date, setDate] = useState("");
+
   const [editingId, setEditingId] = useState(null);
   const [editAmount, setEditAmount] = useState("");
   const [editCategory, setEditCategory] = useState(null);
+  const [editDate, setEditDate] = useState("");
+
 
   const user = auth.currentUser;
   const allCategories = useCategories();
@@ -67,7 +71,7 @@ const IncomePage = () => {
       amount: parseFloat(amount),
       category: categoryName,
       type: "income",
-      date: new Date().toISOString(),
+      date: date || new Date().toISOString().split("T")[0], // save as YYYY-MM-DD
     });
 
     setAmount("");
@@ -75,21 +79,31 @@ const IncomePage = () => {
   };
 
   const startEdit = (t) => {
-    setEditingId(t.id);
-    setEditAmount(t.amount);
-    setEditCategory({ label: t.category, value: t.category });
-  };
+  setEditingId(t.id);
+  setEditAmount(t.amount);
+  setEditCategory({ label: t.category, value: t.category });
+
+  // ✅ Format to YYYY-MM-DD (for input type="date")
+  const rawDate = typeof t.date === "string" ? t.date : "";
+  const formatted = rawDate.includes("T")
+    ? rawDate.split("T")[0]
+    : rawDate; // already clean
+  setEditDate(formatted);
+};
+
 
   const handleUpdate = async () => {
     if (!editAmount || !editCategory || !user) return;
 
-    await updateDoc(
+   await updateDoc(
       doc(db, "users", user.uid, "transactions", editingId),
       {
         amount: parseFloat(editAmount),
         category: editCategory.label,
+        date: editDate, // 👈 store plain YYYY-MM-DD
       }
     );
+
 
     setEditingId(null);
     setEditAmount("");
@@ -107,7 +121,7 @@ const IncomePage = () => {
       <h2 className="mb-4">Manage Income</h2>
       <div className="card p-4 mb-4">
         <div className="row g-3">
-          <div className="col-md-4">
+          <div className="col-md-3">
             <input
               type="number"
               className="form-control"
@@ -116,7 +130,7 @@ const IncomePage = () => {
               onChange={(e) => setAmount(e.target.value)}
             />
           </div>
-          <div className="col-md-4">
+          <div className="col-md-3">
             <CreatableSelect
               isClearable
               onChange={setCategory}
@@ -125,12 +139,21 @@ const IncomePage = () => {
               placeholder="Select or create category"
             />
           </div>
-          <div className="col-md-4">
+          <div className="col-md-3">
+            <input
+              type="date"
+              className="form-control"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </div>
+          <div className="col-md-3">
             <button className="btn btn-success w-100" onClick={handleAdd}>
               Add Income
             </button>
           </div>
         </div>
+
       </div>
 
       <h4>Income History</h4>
@@ -149,36 +172,37 @@ const IncomePage = () => {
               {editingId === t.id ? (
                 <>
                   <td>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={editAmount}
-                      onChange={(e) => setEditAmount(e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <CreatableSelect
-                      isClearable
-                      onChange={setEditCategory}
-                      options={categoryOptions}
-                      value={editCategory}
-                    />
-                  </td>
-                  <td>{new Date(t.date).toLocaleDateString()}</td>
-                  <td>
-                    <button
-                      className="btn btn-success btn-sm me-2"
-                      onClick={handleUpdate}
-                    >
-                      Save
-                    </button>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => setEditingId(null)}
-                    >
-                      Cancel
-                    </button>
-                  </td>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                  />
+                </td>
+                <td>
+                  <CreatableSelect
+                    isClearable
+                    onChange={setEditCategory}
+                    options={categoryOptions}
+                    value={editCategory}
+                />
+                </td>
+                <td>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                  />
+                </td>
+                <td>
+                  <button className="btn btn-success btn-sm me-2" onClick={handleUpdate}>
+                    Save
+                  </button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => setEditingId(null)}>
+                    Cancel
+                  </button>
+                </td>
                 </>
               ) : (
                 <>
@@ -188,7 +212,7 @@ const IncomePage = () => {
                       ? t.category
                       : t.category?.label || t.category?.value}
                   </td>
-                  <td>{new Date(t.date).toLocaleDateString()}</td>
+                  <td>{t.date}</td>
                   <td>
                     <button
                       className="btn btn-warning btn-sm me-2"

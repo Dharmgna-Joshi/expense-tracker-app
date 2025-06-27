@@ -32,6 +32,19 @@ function App() {
       console.error("Logout failed:", error.message);
     }
   };
+const closeNavbar = () => {
+  const navbarCollapse = document.querySelector(".navbar-collapse");
+  if (
+    navbarCollapse &&
+    window.bootstrap &&
+    typeof window.bootstrap.Collapse === "function"
+  ) {
+    const bsCollapse = new window.bootstrap.Collapse(navbarCollapse, {
+      toggle: false,
+    });
+    bsCollapse.hide();
+  }
+};
 
   return (
     <>
@@ -44,19 +57,19 @@ function App() {
           <ul className="navbar-nav ms-auto">
             {user ? (
               <>
-                <li className="nav-item"><Link className="nav-link" to="/home">Dashboard</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/income">Income</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/expenses">Expenses</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/categories">Categories</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/profile">Profile</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/home" onClick={closeNavbar}>Dashboard</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/income" onClick={closeNavbar}>Income</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/expenses" onClick={closeNavbar}>Expenses</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/categories" onClick={closeNavbar}>Categories</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/profile" onClick={closeNavbar}>Profile</Link></li>
                 <li className="nav-item">
                   <button className="btn btn-outline-light ms-3" onClick={handleLogout}>Logout</button>
                 </li>
               </>
             ) : (
               <>
-                <li className="nav-item"><Link className="nav-link" to="/login">Login</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/signup">Sign Up</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/login" onClick={closeNavbar}>Login</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/signup" onClick={closeNavbar}>Sign Up</Link></li>
               </>
             )}
           </ul>
