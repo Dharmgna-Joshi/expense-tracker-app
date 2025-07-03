@@ -20,11 +20,17 @@ const IncomePage = () => {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState(null);
   const [date, setDate] = useState("");
+  const [notes, setNotes] = useState("");
+  const [filterMonth, setFilterMonth] = useState("");
+  const [filterYear, setFilterYear] = useState("");
+
 
   const [editingId, setEditingId] = useState(null);
   const [editAmount, setEditAmount] = useState("");
   const [editCategory, setEditCategory] = useState(null);
   const [editDate, setEditDate] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+
 
 
   const user = auth.currentUser;
@@ -72,16 +78,30 @@ const IncomePage = () => {
       category: categoryName,
       type: "income",
       date: date || new Date().toISOString().split("T")[0], // save as YYYY-MM-DD
+      notes: notes.trim(),
     });
 
     setAmount("");
     setCategory(null);
+    setNotes("");
   };
+
+  const filteredIncomes = incomes.filter((t) => {
+  const incomeDate = new Date(t.date);
+  const incomeMonth = (incomeDate.getMonth() + 1).toString().padStart(2, "0");
+  const incomeYear = incomeDate.getFullYear().toString();
+
+  return (
+    (!filterMonth || incomeMonth === filterMonth) &&
+    (!filterYear || incomeYear === filterYear)
+  );
+});
 
   const startEdit = (t) => {
   setEditingId(t.id);
   setEditAmount(t.amount);
   setEditCategory({ label: t.category, value: t.category });
+  setEditNotes(t.notes || "");
 
   // ✅ Format to YYYY-MM-DD (for input type="date")
   const rawDate = typeof t.date === "string" ? t.date : "";
@@ -101,6 +121,7 @@ const IncomePage = () => {
         amount: parseFloat(editAmount),
         category: editCategory.label,
         date: editDate, // 👈 store plain YYYY-MM-DD
+        notes: editNotes.trim(),
       }
     );
 
@@ -139,10 +160,22 @@ const IncomePage = () => {
               placeholder="Select or create category"
             />
           </div>
+          <div className="row g-3 mt-2">
+            <div className="col-md-9">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Notes (optional)"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+          </div>
           <div className="col-md-3">
             <input
               type="date"
               className="form-control"
+              placeholder="Date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
@@ -157,17 +190,39 @@ const IncomePage = () => {
       </div>
 
       <h4>Income History</h4>
+      <div className="row g-3 mb-3">
+        <div className="col-md-3">
+          <select className="form-select" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}>
+            <option value="">All Months</option>
+            {Array.from({ length: 12 }, (_, i) => (
+              <option key={i + 1} value={(i + 1).toString().padStart(2, "0")}>
+                {new Date(0, i).toLocaleString("default", { month: "long" })}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="col-md-3">
+          <select className="form-select" value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
+            <option value="">All Years</option>
+            {[...new Set(incomes.map((t) => new Date(t.date).getFullYear()))].map((year) => (
+              <option key={year} value={year}>{year}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <table className="table table-bordered">
         <thead className="table-light">
           <tr>
             <th>Amount</th>
             <th>Category</th>
             <th>Date</th>
+            <th>Notes</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {incomes.map((t) => (
+          {filteredIncomes.map((t) => (
             <tr key={t.id}>
               {editingId === t.id ? (
                 <>
@@ -196,6 +251,14 @@ const IncomePage = () => {
                   />
                 </td>
                 <td>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                  />
+                </td>
+                <td>
                   <button className="btn btn-success btn-sm me-2" onClick={handleUpdate}>
                     Save
                   </button>
@@ -213,6 +276,7 @@ const IncomePage = () => {
                       : t.category?.label || t.category?.value}
                   </td>
                   <td>{t.date}</td>
+                  <td>{t.notes || ""}</td>
                   <td>
                     <button
                       className="btn btn-warning btn-sm me-2"
