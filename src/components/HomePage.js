@@ -20,9 +20,12 @@ const HomePage = () => {
   const [expense, setExpense] = useState(0);
   const [categoryData, setCategoryData] = useState({});
   const [allTransactions, setAllTransactions] = useState([]);
+  const currentDate = new Date();
+  const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, "0");
+  const currentYear = currentDate.getFullYear().toString();
 
-  const [filterMonth, setFilterMonth] = useState("");
-  const [filterYear, setFilterYear] = useState("");
+  const [filterMonth, setFilterMonth] = useState(currentMonth);
+  const [filterYear, setFilterYear] = useState(currentYear);
 
   useEffect(() => {
     const user = auth.currentUser;

@@ -9,6 +9,8 @@ import SignUp from "./components/Auth/SignUp";
 import ProfilePage from "./components/ProfilePage";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import useAutoLogout from "./hooks/useAutologout.js";
+
 
 import { auth } from "./firebase";
 
@@ -23,6 +25,7 @@ function App() {
     });
     return () => unsubscribe();
   }, []);
+  useAutoLogout(user ? 30 * 60 * 1000 : null);
 
   const handleLogout = async () => {
     try {
@@ -32,19 +35,17 @@ function App() {
       console.error("Logout failed:", error.message);
     }
   };
-const closeNavbar = () => {
-  const navbarCollapse = document.querySelector(".navbar-collapse");
-  if (
-    navbarCollapse &&
-    window.bootstrap &&
-    typeof window.bootstrap.Collapse === "function"
-  ) {
-    const bsCollapse = new window.bootstrap.Collapse(navbarCollapse, {
-      toggle: false,
-    });
-    bsCollapse.hide();
-  }
-};
+  const closeNavbar = () => {
+    const toggler = document.querySelector(".navbar-toggler");
+    const navbarCollapse = document.querySelector(".navbar-collapse");
+
+    if (
+      window.getComputedStyle(toggler).display !== "none" &&
+      navbarCollapse.classList.contains("show")
+    ) {
+      toggler.click();
+    }
+  };
 
   return (
     <>
